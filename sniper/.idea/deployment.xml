@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="PublishConfigData" autoUpload="Always" serverName="root@121.5.72.29:22 password" deleteMissingItems="true" autoUploadExternalChanges="true">
+    <serverData>
+      <paths name="root@121.5.72.29:22 password">
+        <serverdata>
+          <mappings>
+            <mapping deploy="/root/work" local="$PROJECT_DIR$" />
+          </mappings>
+        </serverdata>
+      </paths>
+      <paths name="腾讯云">
+        <serverdata>
+          <mappings>
+            <mapping local="$PROJECT_DIR$" web="/" />
+          </mappings>
+        </serverdata>
+      </paths>
+    </serverData>
+    <option name="myAutoUpload" value="ALWAYS" />
+  </component>
+</project>

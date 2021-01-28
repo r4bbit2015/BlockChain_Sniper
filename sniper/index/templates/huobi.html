@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html>
+ <head>
+  <meta charset="utf-8" />
+  <title>Layui</title>
+  <meta name="renderer" content="webkit" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+ </head>
+ <body>
+   {% load static %}
+  <link rel="stylesheet" href="{% static  '/css/layui.css '%}" />
+  <table class="layui-hide" id="huobi-table"></table> {% load static %}
+  <script src="{%  static 'layui.js'%}"></script>
+  <script>
+        layui.use('table',
+        function() {
+            var table = layui.table;
+            //
+            //定时渲染页面
+            table.render({
+                  initSort: {
+    field: 'get_times' //排序字段，对应 cols 设定的各字段名
+    ,type: 'desc' //排序方式  asc: 升序、desc: 降序、null: 默认排序
+  },
+                async: false,
+                elem: '#huobi-table',
+                height: 'full-200' //高度自适应
+                ,
+                url: '/huobi' //数据接口
+                ,
+                cellMinWidth: 90,
+                limit: 100 //一页显示条数
+                ,
+                loading: true,
+                first: false //不显示首页
+                ,
+                last: false //不显示尾页
+                ,
+                page: true //开启分页
+                ,
+                cols: [[ //表头
+                {
+                    field: 'id',
+                    type: 'numbers',
+                    title: 'ID',
+                    width: 80,
+                    sort: true,
+                    fixed: 'left'
+                },
+                {
+                    field: 'notice_times',
+                    title: '上线时间',
+                    align: 'center',
+                    sort: true
+                },
+                {
+                    field: 'exchange_name',
+                    title: '交易所',
+                    align: 'center'
+                },
+                {
+                    field: 'notice_coin_name',
+                    title: '币名',
+                    align: 'center'
+                },
+                {
+                    field: 'notice_data',
+                    title: '详情公告',
+                    align: 'center'
+                },
+                {
+                    field: 'get_times',
+                    title: '触发狙击',
+                    align: 'center'
+                }]]
+            });
+
+        });
+    {#    window.reloadView = function () {#}
+    {#      window.location.reload();#}
+    {#  }#}
+    {##}
+    {#setInterval('reloadView()',3000)#}
+</script>
+ </body>
+</html>
