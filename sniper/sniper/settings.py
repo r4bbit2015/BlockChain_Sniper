@@ -31,7 +31,9 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'monitor',
     'index',
+    'dwebsocket',#2021年2月16日19:23:08 添加dwebsocket 实现websocket
 ]
+WEBSOCKET_ACCEPT_ALL=True   # 可以允许每一个单独的视图使用websockets
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -117,3 +119,20 @@ STATIC_URL = '/static/'
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'static'),
 ]
+
+
+###邮件发送配置###
+# 发送邮件
+# 发送邮件设置
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_USE_TLS = False   # 是否使用TLS安全传输协议
+EMAIL_USE_SSL = False    # 是否使用SSL加密，qq企业邮箱要求使用
+# SMTP地址
+EMAIL_HOST = 'smtp.qq.com'
+# SMTP端口 587为加密端口 25为非加密
+EMAIL_PORT = 25
+# 自己的邮箱
+EMAIL_HOST_USER = '2912285367@qq.com'
+# 自己的邮箱授权码，非密码
+EMAIL_HOST_PASSWORD = 'cimfktrhhruydghe'
+EMAIL_SUBJECT_PREFIX = '沉船资本'
