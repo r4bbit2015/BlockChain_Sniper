@@ -6,10 +6,10 @@ import requests
 from django.shortcuts import render,HttpResponse
 from django.utils import timezone
 from django.views.generic import ListView
-from monitor.models import MonitorData,ExchangeName
+from monitor.models import MonitorData,ExchangeName,PriceMonitorData
 from django.http import JsonResponse
 from django.core.mail import send_mail   # 导入邮箱模块
-
+import decimal
 # #TypeError: Object of type 'datetime' is not JSON serializable
 #这个错误的原因是json.dumps无法对字典中的datetime时间格式数据进行转化，dumps的原功能是将dict转化为str格式，不支持转化时间，所以需要将json类部分内容重新改写，来处理这种特殊日期格式。
 
@@ -22,30 +22,30 @@ class DateEncoder(json.JSONEncoder):
         else:
             return json.JSONEncoder.default(self, obj)
 
+#TypeError: Object of type Decimal is not JSON serializable
+#解决Decimal类型数据无法通过JSON序列化 cls只可以使用一个，所以这里将Decimal直接转换为float
+# class DecimalEncoder(json.JSONEncoder):
+#     def default(self, o):
+#         if isinstance(o, decimal.Decimal):
+#             return float(o)
+#         super(DecimalEncoder, self).default(o)
 
 def index(request):
     return render(request,"index.html")
-
-
 def all_exchanges(request):
     return render(request,'all_exchanges.html')
 def timing_futures(request):
     return render(request,'timing_futures.html')
-
 def huobi(request):
     return render(request,'huobi.html')
-
 def mx(request):
     return render(request,'mx.html')
-
-
-
 def settings(request):
     return render(request,'settings.html')
-
 def coin_price_monitor(request):
     return render(request,'coin_price_monitor.html')
-def views_all_exchanges(request):
+
+def show_all_exchanges(request):
     huobi_data = MonitorData.objects.filter(exchange_name_id=1)  # 取出交易所id为1的数据
     data = []
     #读火币
@@ -70,7 +70,7 @@ def views_all_exchanges(request):
     return HttpResponse(json.dumps(return_templates, cls=DateEncoder), content_type="application/json,charset=utf-8")
 
 #从orm读取数据到视图层
-def views_huobi(request):
+def show_huobi(request):
     huobi_data = MonitorData.objects.filter(exchange_name_id=1)#取出交易所id为1的数据
     data = []
     for datas in huobi_data:
@@ -82,9 +82,7 @@ def views_huobi(request):
         data.append(datas_dict);
     return_templates = {'code': 0, 'msg': '', 'count': len(data), 'data': data}
     return HttpResponse(json.dumps(return_templates,cls=DateEncoder), content_type="application/json,charset=utf-8")
-
-
-def views_mx(request):
+def show_mx(request):
     mx_data = MonitorData.objects.filter(exchange_name_id=4)
     data = []
     for datas in mx_data:
@@ -96,9 +94,7 @@ def views_mx(request):
         data.append(datas_dict);
     return_templates = {'code': 0, 'msg': '', 'count': len(data), 'data': data}
     return HttpResponse(json.dumps(return_templates, cls=DateEncoder), content_type="application/json,charset=utf-8")
-
-
-def views_set_mail(request):
+def add_mail(request):
     #设置邮箱
     #code 返回值 200 发送成功，404 后端未接受到数据  301 发送邮件失败
     res = {"code": 200}
@@ -125,7 +121,6 @@ def views_set_mail(request):
     elif request.method == 'GET':
         return redirect("/login")  # 如果是get 就返回登录界面
     # In order to allow non-dict objects to be serialized set the safe parameter to False. 添加safe=False
-    # return JsonResponse(res, safe=False)
     return JsonResponse(res,safe=False)
 #传入交易所ID 返回当前价格
 
@@ -140,10 +135,30 @@ def views_set_mail(request):
 # WebSocket.send（message）像客户端发送消息，message为byte类型
 
 
-def views_monitor_price(request):
-    res = {"code": 200,"current_price":0};
+#显示设置的价格监控
+def show_monitor_price(request):
+    all_monitor_price = PriceMonitorData.objects.all();#通过orm将数据拿出来
+    return_data = []
 
-    # code 返回值 200 发送成功，301 后端未接受到数据  404 不识别的交易对
+    for data in all_monitor_price:
+        datas_dict = {'create_times': data.create_times,
+                      'exchange_name': data.exchange_name,
+                      'coin_name': data.coin_name,
+                      #cls只可以使用一个，所以这里将Decimal直接转换为float
+                      'current_price': float(data.current_price),
+                      'monitor_price': float(data.monitor_price),
+                      'monitor_statue': data.monitor_statue}
+        print(datas_dict)
+        return_data.append(datas_dict);
+
+    # print(datas);
+    return_templates = {'code': 0, 'msg': '', 'count': len(return_data), 'data': return_data}
+    return HttpResponse(json.dumps(return_templates, cls=DateEncoder), content_type="application/json,charset=utf-8")
+
+def add_monitor_price(request):
+    res = {"code": 0,"current_price":0};
+
+    # code 返回值 200 插入成功，301 后端未接受到数据  404 不识别的交易对
     if request.method == 'POST':
         exchange_id = int(request.POST.get('exchange'))  # 交易所ID 1-火币 2-币安 3-抹茶 4-OKex
         monitor_price = request.POST.get('monitor_price') #监控价格
@@ -157,21 +172,49 @@ def views_monitor_price(request):
             return JsonResponse(res,safe=False)
         res['current_price'] = get_current_price(exchange_id,coin_name)
 
-        print("交易所ID:", exchange_id)
-        print("监控币名:", coin_name)
-        print("当前价格:",res['current_price'])
-        print("监控价格:", monitor_price)
 
+        #存储到数据库中
+        create_times  = timezone.now()
+        exchange_name = ""
+        if exchange_id == 1:
+            exchange_name="火币交易所";
+        elif exchange_id == 2:
+            exchange_name="币安交易所";
+        elif exchange_id == 3:
+            exchange_name="抹茶交易所";
+        elif exchange_id == 4:
+            exchange_name="okex交易所";
+        print("交易所ID:", exchange_id)
+        print("交易所名称:", exchange_name)
+        print("监控币名:", coin_name)
+        print("当前价格:", res['current_price'])
+        print("监控价格:", monitor_price)
+        insert_status = PriceMonitorData.objects.create(create_times=create_times, exchange_name=exchange_name,
+                                                   coin_name=coin_name, current_price=res['current_price'],
+                                                   monitor_price=monitor_price)
+        #插入成功
+        if insert_status != 0:
+            res["code"]=200
 
     elif request.method == 'GET':
         return redirect("/login")  # 如果是get 就返回登录界面
 
 
     return JsonResponse(res,safe=False)
-
+def del_all_monitor_price(request):
+    #200 删除成功
+    #状态码-删除数量
+    res = {"code": 0};
+    #删除数据库中所有数据
+    if request.method == 'POST':
+        del_status = PriceMonitorData.objects.all().delete()
+        # print(del_status); 此处没有做健壮性处理
+        res["code"]=200;
+    elif request.method == 'GET':
+        return redirect("/login")  # 如果是get 就返回登录界面
+    return JsonResponse(res,safe=False)
 def get_current_price(exchange_id,coin_name):
     res = {"code": 200};
-
     current_price = 0;
     if exchange_id == 1:
         print("火币交易所")

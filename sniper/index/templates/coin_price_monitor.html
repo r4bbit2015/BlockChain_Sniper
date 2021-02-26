@@ -45,7 +45,8 @@
 
 
       </div>
-            <button class="layui-btn" lay-submit="" lay-filter="submit_monitor_price" id = "monitor_price_submit">设定监控</button>
+            <button class="layui-btn" lay-submit="" lay-filter="submit_monitor_price" id = "add_monitor_price_submit">设定监控</button>
+            <button class="layui-btn" lay-submit="" lay-filter="submit_monitor_price" id = "del_all_monitor_price_submit">删除全部</button>
 
      </div>
 
@@ -55,6 +56,13 @@
    <legend>我的监控</legend>
   </fieldset>
         <table class="layui-hide" id="monitor-price-table"></table>
+
+
+<script type="text/html" id="checkboxTpl">
+  <!-- 这里的 checked 的状态只是演示 -->
+  <input type="checkbox" name="status" value="{{d.id}}" title="锁定" lay-filter="status" >
+</script>
+
     <script>
         //使用websocket获取当前价格
             {#var socket = new WebSocket("ws:" + window.location.host + "client/");#}
@@ -66,7 +74,36 @@
      var editIndex = layedit.build('LAY_demo_editor');
      //监听提交
         $(function () {
-            $("#monitor_price_submit").click(function () {
+            $("#del_all_monitor_price_submit").click(function () {
+             $.ajax({
+                url: "client/del_all_monitor_price",
+                data: "delete_all",
+                //将表单数据序列化，格式为name=value
+                type: 'POST',
+                dataType: 'json',
+                success: function(data) {
+                    //success
+                    if (data.code == 200) {
+                     layer.alert('删除成功',{icon:1});
+                        show_monitor_price();//添加新的监控后，从数据库中读取数据显示到前端页面
+                     $("#current_price").val(data.current_price);
+                        console.log(data.current_price);
+                    }else if (data.code == 404) {
+                     layer.alert("服务器出现异常错误",{icon: 5});
+                    }else if (data.code==301){
+                     layer.alert("请检查信息是否填写正确",{icon: 5});
+                    }
+                },
+			error: function() {
+				console.log("提交ajax函数异常");
+				console.log( $('#monitor_price_form').serialize());
+            layer.alert('操作失败！！！',{icon:5});
+			},
+
+		});
+
+            })
+            $("#add_monitor_price_submit").click(function () {
                 if($("#coin_name").val()=="" || $("#monitor_price").val() == "")
                 {
                     layer.alert("信息未填写完毕",{icon:5});
@@ -75,7 +112,7 @@
 
                console.log( $('#monitor_price_form').serialize());
                 $.ajax({
-                url: "client/monitor_price",
+                url: "client/add_monitor_price",
                 data: $('#monitor_price_form').serialize(),
                 //将表单数据序列化，格式为name=value
                 type: 'POST',
@@ -84,6 +121,7 @@
                     //success
                     if (data.code == 200) {
                      layer.alert('设置成功',{icon:1});
+                        show_monitor_price();//添加新的监控后，从数据库中读取数据显示到前端页面
                      $("#current_price").val(data.current_price);
                         console.log(data.current_price);
                     }else if (data.code == 404) {
@@ -105,7 +143,8 @@
 
 
     //监控表格
-        layui.use('table',
+         function show_monitor_price(){
+            layui.use('table',
 function() {
     var table = layui.table;
     //
@@ -115,7 +154,7 @@ function() {
         elem: '#monitor-price-table',
         height: 'full-200' //高度自适应
         ,
-        url: '/mx' //数据接口
+        url: 'client/show_monitor_price' //数据接口
         ,
         cellMinWidth: 90,
         limit: 100 //一页显示条数
@@ -137,7 +176,7 @@ function() {
             fixed: 'left'
         },
         {
-            field: 'notice_times',
+            field: 'create_times',
             title: '创建时间',
             align: 'center',
             sort: true
@@ -148,28 +187,34 @@ function() {
             align: 'center'
         },
         {
-            field: 'notice_coin_name',
+            field: 'coin_name',
             title: '币名',
             align: 'center'
         },
         {
-            field: 'notice_data',
+            field: 'current_price',
             title: '当前价格',
             align: 'center'
         },
         {
-            field: 'get_times',
-            title: '设定价格',
+            field: 'monitor_price',
+            title: '监控价格',
             align: 'center'
         },
-         {
-            field: 'notice_data',
-            title: '状态',
+         {  //应该为status表示状态，这里单词打错了，懒得修改对应数据库信息，就将错就错
+            field: 'monitor_statue',
+            title: '当前状态',
             align: 'center'
-        }]]
+        },
+         {field:'lock', title:'是否关闭', width:110, templet: '#checkboxTpl', unresize: true}
+        ]]
     });
-
+ form.on('checkbox(lockDemo)', function(obj){
+    layer.tips(this.value + ' ' + this.name + '：'+ obj.elem.checked, obj.othis);
+  });
 });
+}
+show_monitor_price();
 </script>
    </div>
   </form>

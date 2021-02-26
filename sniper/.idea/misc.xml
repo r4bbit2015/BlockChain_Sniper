@@ -3,5 +3,8 @@
   <component name="JavaScriptSettings">
     <option name="languageLevel" value="ES6" />
   </component>
+  <component name="ProjectPlainTextFileTypeManager">
+    <file url="file://$PROJECT_DIR$/monitor/migrations/0001_initial.py" />
+  </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="Remote Python 3.7.3 (sftp://root@121.5.72.29:22/usr/bin/python3)" project-jdk-type="Python SDK" />
 </project>

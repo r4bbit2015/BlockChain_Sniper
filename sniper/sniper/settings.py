@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'monitor',
     'index',
-    'dwebsocket',#2021年2月16日19:23:08 添加dwebsocket 实现websocket
+    'djcelery',#2021年2月19日03:46:01 添加异步处理
 ]
 WEBSOCKET_ACCEPT_ALL=True   # 可以允许每一个单独的视图使用websockets
 
@@ -111,7 +111,7 @@ USE_I18N = True
 
 USE_L10N = True
 
-USE_TZ = True
+USE_TZ = False
 
 AUTH_USER_MODEL='auth.User'
 
